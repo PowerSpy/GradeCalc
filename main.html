@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade Calculator</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+
+        input {
+            width: 100%;
+            padding: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Enter Data</h2>
+    <h6>(copy paste from aeries categories section without the labels or total line)</h6>
+    <input type="text" id="entry" name="Distribution" placeholder="Type and press Enter"><br>
+
+    <h3>New Assignment</h3>
+    <select name="selection" id="categoryName">
+        <option value="None">None</option>
+    </select>
+    <input type="number" id="pointsEarned" placeholder="Points Earned" /><br>
+    <input type="number" id="maxPoints" placeholder="Max Points" /><br>
+    <button id="submitAssignment" style="background-color: green; color: white;">Submit New Assignment</button>
+
+    <h2>Results</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Weight</th>
+                <th>Points Earned</th>
+                <th>Max Points</th>
+                <th>Percentage</th>
+                <th>Grade</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Rows will be populated dynamically -->
+        </tbody>
+    </table>
+
+    <h2 id="overallGradeTitle" style="text-align: center; margin-top: 20px;">
+        Total: 
+      </h2>
+
+    <script>
+        // Listen for Enter key press on the input field
+document.getElementById('entry').addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+        const input = this.value;
+        fetch('/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'entry=' + encodeURIComponent(input)
+        })
+        .then(response => response.json())  // Expecting a JSON response
+        .then(data => {
+            console.log("Server says:", data);
+            updateGrade(data);
+            return reCalculate(data);  // Wait for reCalculate to finish
+        })
+        .then(updatedData => {
+            console.log(updatedData);
+            updateTable(updatedData);  // Update the table with the updated data
+            updateDropdown(updatedData);  // Update dropdown
+        })
+        .catch(error => console.error("Error:", error));
+    }
+});
+
+document.getElementById('submitAssignment').addEventListener('click', function() {
+    const category = document.getElementById("categoryName").value;
+    const points = document.getElementById("pointsEarned").value;
+    const max = document.getElementById("maxPoints").value;
+
+    fetch('/newData', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            entry: tableToDicts(),
+            update: [category, points, max]
+        })
+    }).then(response => response.json())
+        .then(data => {
+            console.log("Server Update:", data);
+            updateTable(data);
+            updateGrade(data);
+        })
+        .catch(error => console.error("Error updating assignment:", error));
+});
+
+// Function to update the table with the new data
+function updateTable(data) {
+    const tbody = document.querySelector('table tbody');
+    tbody.innerHTML = '';  // Clear current table data
+
+    data.forEach(entry => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${entry.category}</td>
+            <td class="weight">${entry.weight}</td>
+            <td class="points-earned">${entry.score}</td>
+            <td class="max-points">${entry.total}</td>
+            <td class="percentage">${entry.percent}</td>
+            <td class="grade">${entry.grade}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updateDropdown(data) {
+    const dropdown = document.getElementById("categoryName");
+    dropdown.innerHTML = '';  // Clear current dropdown options
+    data.forEach(entry => {
+        const option = document.createElement('option');
+        option.value = entry.category;
+        option.textContent = entry.category;
+        dropdown.appendChild(option);
+    });
+}
+
+function updateGrade(data) {
+    return fetch('/overallGrade', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            info: data
+        })
+    }).then(response => response.json())
+    .then(out => {
+        const gradeText = document.getElementById("overallGradeTitle");
+        gradeText.textContent = "Total: " + out.percent + " (" + out.grade + ")";
+        return out;  // Return data to chain further processing
+    });
+}
+
+function reCalculate(data) {
+    return fetch('/recalc', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            info: data
+        })
+    }).then(response => response.json())
+    .then(data => {
+        console.log(data);
+        return data;  // Ensure data is returned for further processing
+    });
+}
+
+function tableToDicts() {
+    const rows = document.querySelectorAll("table tbody tr");
+    const results = [];
+
+    rows.forEach(row => {
+        const cells = row.querySelectorAll("td");
+        if (cells.length === 6) {
+            results.push({
+                category: cells[0].textContent.trim(),
+                weight: cells[1].textContent.trim(),
+                score: cells[2].textContent.trim(),
+                total: cells[3].textContent.trim(),
+                percent: cells[4].textContent.trim(),
+                grade: cells[5].textContent.trim()
+            });
+        }
+    });
+    console.log(results);
+    return results;
+}
+
+    </script>
+</body>
+</html>
