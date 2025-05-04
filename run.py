@@ -38,7 +38,7 @@ def submit():
     data = request.form.get('entry', '')
 
     clean_data = ' '.join(data.split())
-    pattern = r'(.*?)\s+(\d+\.?\d*%)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*%)\s+([A-F][+-]?)'
+    pattern = r'(.*?)\s+(\d+\.?\d*%)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*%)\s*([A-F][+-]?)?'
     matches = re.findall(pattern, clean_data)
 
     results = [
@@ -60,7 +60,6 @@ def update():
     entries = data['entry']
     newdata = data['update']
 
-
     category = newdata[0]
 
     for entry in entries:
@@ -68,11 +67,14 @@ def update():
             entry['score'] = float(entry['score']) + float(newdata[1])
             entry['total'] = float(entry['total']) + float(newdata[2])
 
-
-            percent = round((entry['score'] / entry['total']) * 100, 2)
-            entry['percent'] = f"{percent}%"
-
-            entry['grade'] = percent_to_letter(percent)
+            if entry['score'] == 0 and entry['total'] == 0:
+                percent = -1
+                entry['percent'] = "-1"
+                entry['grade'] = ""
+            else:
+                percent = round((entry['score'] / entry['total']) * 100, 2)
+                entry['percent'] = f"{percent}%"
+                entry['grade'] = percent_to_letter(percent)
 
     return jsonify(entries)
 
@@ -81,16 +83,32 @@ def grade():
     data = request.get_json()
     entries = data['info']
 
-    percent = 0
+    weighted_total = 0
+    total_weight = 0
 
     for entry in entries:
-        this_perc_as_decimal = round(float(entry['score']) / float(entry['total']), 4)
-        this_perc = round(100 * (float(entry['score']) / float(entry['total'])), 2)
+        score = float(entry['score'])
+        total = float(entry['total'])
+
+        if score == 0 and total == 0:
+            entry['percent'] = "-1"
+            entry['grade'] = ""
+            continue
+
+        weight = float(entry['weight'][:-1])  # Remove % symbol
+        this_perc = round((score / total) * 100, 2)
         entry['percent'] = f"{this_perc}%"
         entry['grade'] = percent_to_letter(this_perc)
-        percent += this_perc_as_decimal * float(entry['weight'][:-1])
-    
-    return jsonify({'percent' : percent, 'grade' : percent_to_letter(percent)})
+
+        weighted_total += this_perc * weight
+        total_weight += weight
+
+    if total_weight == 0:
+        overall_percent = 0
+    else:
+        overall_percent = round(weighted_total / total_weight, 2)
+
+    return jsonify({'percent': overall_percent, 'grade': percent_to_letter(overall_percent)})
 
 @app.route('/recalc', methods=['POST'])
 def recalc():
@@ -98,12 +116,18 @@ def recalc():
     entries = data['info']
 
     for entry in entries:
-        this_perc = round(100 * (float(entry['score']) / float(entry['total'])), 2)
-        entry['percent'] = f"{this_perc}%"
-        entry['grade'] = percent_to_letter(this_perc)
-    
-    return jsonify(entries)
+        score = float(entry['score'])
+        total = float(entry['total'])
 
+        if score == 0 and total == 0:
+            entry['percent'] = "-1"
+            entry['grade'] = ""
+        else:
+            this_perc = round((score / total) * 100, 2)
+            entry['percent'] = f"{this_perc}%"
+            entry['grade'] = percent_to_letter(this_perc)
+
+    return jsonify(entries)
 
 if __name__ == '__main__':
     app.run(port=8000, debug=True)
