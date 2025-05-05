@@ -96,17 +96,16 @@ def grade():
             continue
 
         weight = float(entry['weight'][:-1])  # Remove % symbol
-        this_perc = round((score / total) * 100, 2)
-        entry['percent'] = f"{this_perc}%"
-        entry['grade'] = percent_to_letter(this_perc)
+        entry['percent'] = f"{round((score / total) * 100, 2)}%"
+        entry['grade'] = percent_to_letter(round((score / total) * 100, 2))
 
-        weighted_total += this_perc * weight
+        weighted_total += (score / total) * weight
         total_weight += weight
 
     if total_weight == 0:
         overall_percent = 0
     else:
-        overall_percent = round(weighted_total / total_weight, 2)
+        overall_percent = round(100 * (weighted_total / total_weight), 2)
 
     return jsonify({'percent': overall_percent, 'grade': percent_to_letter(overall_percent)})
 
