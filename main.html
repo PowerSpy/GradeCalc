@@ -1,231 +1,245 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grade Calculator</title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        table, th, td {
-            border: 1px solid black;
-        }
-
-        th, td {
-            padding: 8px;
-            text-align: center;
-        }
-
-        input {
-            width: 100%;
-            padding: 4px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grade Calculator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Dynamic, free‑floating gradient blobs */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.6;
+      filter: blur(70px);
+      mix-blend-mode: screen;
+      animation: drift 30s ease-in-out infinite alternate;
+    }
+    /* Keyframes for smooth drifting and rotation */
+    @keyframes drift {
+      0%   { transform: translate(-30%, -30%) scale(1)   rotate(0deg);   }
+      25%  { transform: translate(20%, -10%)  scale(1.15) rotate(45deg); }
+      50%  { transform: translate(40%, 30%)   scale(0.9)  rotate(120deg);}
+      75%  { transform: translate(-10%, 40%)  scale(1.1)  rotate(180deg);} 
+      100% { transform: translate(-30%, -30%) scale(1)   rotate(360deg);} 
+    }
+  </style>
 </head>
-<body>
-    <h2>Enter Data</h2>
-    <h5>(copy paste from aeries categories section without the labels or total line)</h5>
-    <input type="text" id="entry" name="Distribution" placeholder="Type and press Enter"><br>
+<body class="relative min-h-screen flex justify-center items-start bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 p-6">
+  <!-- Decorative animated blobs -->
+  <span class="blob bg-indigo-500 w-96 h-96 -left-48 -top-24" style="animation-duration: 35s; animation-delay: -5s;"></span>
+  <span class="blob bg-fuchsia-500 w-80 h-80 right-[-120px] top-1/2" style="animation-duration: 28s; animation-delay: -12s;"></span>
+  <span class="blob bg-cyan-500 w-[28rem] h-[28rem] -bottom-48 left-1/3" style="animation-duration: 32s; animation-delay: -8s;"></span>
 
-    <h3>New Assignment</h3>
-        <select name="selection" id="categoryName">
-            <option value="None">None</option>
-        </select>
-        <input type="number" id="pointsEarned" placeholder="Points Earned" /><br>
-        <input type="number" id="maxPoints" placeholder="Max Points" /><br>
-        <button id="submitAssignment" style="background-color: green; color: white;">Submit New Assignment</button>
+  <main class="relative z-10 w-full max-w-6xl md:w-4/5 lg:w-4/5 xl:w-4/5 space-y-12 backdrop-blur-md bg-white/5 rounded-2xl shadow-2xl p-10 ring-1 ring-white/10">
+    <!-- Header -->
+    <header class="text-center space-y-2">
+      <h1 class="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-fuchsia-400">
+        Better Grade Calculator
+      </h1>
+      <p class="text-sm text-slate-300">Not powered by artificial intelligence!</p>
+    </header>
 
-    <h3>Grade Needed</h3>
-        <select name="selection" id="categoryName-Needed">
-            <option value="None">None</option>
-        </select>
-        <input type="number" id="maxPoints-Needed" placeholder="Max Points" /><br>
-        <input type="text" id="gradeWanted-Needed" placeholder="90%" /><br>
-        <button id="calculate-Needed" style="background-color: green; color: white;">Calculate Minimum Grade</button>
-        <h4 id="output-Needed"></h4>
-    
+    <!-- Input Section -->
+    <section class="space-y-4">
+      <h2 class="text-2xl font-semibold text-indigo-300">Enter Data</h2>
+      <p class="text-xs text-slate-400">Copy‑paste from the Aeries categories section (omit labels & totals)</p>
+      <input id="entry" type="text" placeholder="Type and press Enter"
+        class="w-full rounded-lg bg-slate-800/60 border border-slate-700 focus:ring-fuchsia-500 focus:border-fuchsia-500 placeholder-slate-500 p-3" />
+    </section>
 
-    <h2>Results</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Category</th>
-                <th>Weight</th>
-                <th>Points Earned</th>
-                <th>Max Points</th>
-                <th>Percentage</th>
-                <th>Grade</th>
+    <!-- New Assignment Section -->
+    <section class="space-y-4">
+      <h3 class="text-xl font-medium text-indigo-300">New Assignment</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <select id="categoryName"
+          class="rounded-lg bg-slate-800/60 border border-slate-700 focus:ring-fuchsia-500 focus:border-fuchsia-500 p-3"></select>
+        <input id="pointsEarned" type="number" placeholder="Points Earned"
+          class="rounded-lg bg-slate-800/60 border border-slate-700 focus:ring-fuchsia-500 focus:border-fuchsia-500 p-3" />
+        <input id="maxPoints" type="number" placeholder="Max Points"
+          class="rounded-lg bg-slate-800/60 border border-slate-700 focus:ring-fuchsia-500 focus:border-fuchsia-500 p-3" />
+      </div>
+      <button id="submitAssignment"
+        class="px-6 py-2 bg-gradient-to-r from-indigo-500 to-fuchsia-500 rounded-lg text-white font-semibold shadow-lg hover:shadow-fuchsia-500/40 transition transform hover:-translate-y-0.5">
+        Submit New Assignment
+      </button>
+    </section>
+
+    <!-- Grade Needed Section -->
+    <section class="space-y-4">
+      <h3 class="text-xl font-medium text-indigo-300">Grade Needed</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <select id="categoryName-Needed"
+          class="rounded-lg bg-slate-800/60 border border-slate-700 focus:ring-fuchsia-500 focus:border-fuchsia-500 p-3"></select>
+        <input id="maxPoints-Needed" type="number" placeholder="Max Points"
+          class="rounded-lg bg-slate-800/60 border border-slate-700 focus:ring-fuchsia-500 focus:border-fuchsia-500 p-3" />
+        <input id="gradeWanted-Needed" type="text" placeholder="90%"
+          class="rounded-lg bg-slate-800/60 border border-slate-700 focus:ring-fuchsia-500 focus:border-fuchsia-500 p-3" />
+      </div>
+      <button id="calculate-Needed"
+        class="px-6 py-2 bg-gradient-to-r from-indigo-500 to-fuchsia-500 rounded-lg text-white font-semibold shadow-lg hover:shadow-fuchsia-500/40 transition transform hover:-translate-y-0.5">
+        Calculate Minimum Grade
+      </button>
+      <h4 id="output-Needed" class="font-semibold text-fuchsia-400"></h4>
+    </section>
+
+    <!-- Results Section -->
+    <section class="space-y-4">
+      <h2 class="text-2xl font-semibold text-indigo-300">Results</h2>
+      <div class="">
+        <table class="min-w-full divide-y divide-slate-700 bg-slate-800/50 rounded-lg shadow-inner backdrop-blur-lg">
+          <thead class="bg-slate-800/70">
+            <tr class="text-slate-300">
+              <th class="px-4 py-2">Category</th>
+              <th class="px-4 py-2">Weight</th>
+              <th class="px-4 py-2">Points Earned</th>
+              <th class="px-4 py-2">Max Points</th>
+              <th class="px-4 py-2">Percentage</th>
+              <th class="px-4 py-2">Grade</th>
             </tr>
-        </thead>
-        <tbody>
-            <!-- Rows will be populated dynamically -->
-        </tbody>
-    </table>
+          </thead>
+          <tbody class="divide-y divide-slate-700 text-slate-200"></tbody>
+        </table>
+      </div>
+      <h2 id="overallGradeTitle" class="text-center text-2xl font-bold text-fuchsia-400">Total:</h2>
+    </section>
+  </main>
 
-    <h2 id="overallGradeTitle" style="text-align: center; margin-top: 20px;">
-        Total: 
-      </h2>
 
-    <script>
-        // Listen for Enter key press on the input field
-document.getElementById('entry').addEventListener('keydown', function(event) {
-    if (event.key === 'Enter') {
+  <!-- Original Script (kept intact) -->
+  <script>
+    // Listen for Enter key press on the input field
+    document.getElementById('entry').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
         const input = this.value;
         fetch('/submit', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: 'entry=' + encodeURIComponent(input)
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: 'entry=' + encodeURIComponent(input)
         })
-        .then(response => response.json())  // Expecting a JSON response
-        .then(data => {
-            console.log("Server says:", data);
+          .then(response => response.json())
+          .then(data => {
             updateGrade(data);
-            return reCalculate(data);  // Wait for reCalculate to finish
-        })
-        .then(updatedData => {
-            console.log(updatedData);
-            updateTable(updatedData);  // Update the table with the updated data
-            updateDropdown(updatedData);  // Update dropdown
-        })
-        .catch(error => console.error("Error:", error));
-    }
-});
+            return reCalculate(data);
+          })
+          .then(updatedData => {
+            updateTable(updatedData);
+            updateDropdown(updatedData);
+          })
+          .catch(error => console.error('Error:', error));
+      }
+    });
 
-document.getElementById('submitAssignment').addEventListener('click', function() {
-    const category = document.getElementById("categoryName").value;
-    const points = document.getElementById("pointsEarned").value;
-    const max = document.getElementById("maxPoints").value;
+    document.getElementById('submitAssignment').addEventListener('click', function () {
+      const category = document.getElementById('categoryName').value;
+      const points = document.getElementById('pointsEarned').value;
+      const max = document.getElementById('maxPoints').value;
 
-    fetch('/newData', {
+      fetch('/newData', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            entry: tableToDicts(),
-            update: [category, points, max]
-        })
-    }).then(response => response.json())
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry: tableToDicts(), update: [category, points, max] })
+      })
+        .then(r => r.json())
         .then(data => {
-            console.log("Server Update: ", data);
-            updateTable(data);
-            updateGrade(data);
+          updateTable(data);
+          updateGrade(data);
         })
-        .catch(error => console.error("Error updating assignment:", error));
-});
-document.getElementById('calculate-Needed').addEventListener('click', function(){
-    const category = document.getElementById("categoryName-Needed").value;
-    const maxPoints = document.getElementById("maxPoints-Needed").value;
-    const gradeWanted = document.getElementById("gradeWanted-Needed").value;
-    const responseheader = document.getElementById("output-Needed");
-    fetch('/categoryNeed', {
+        .catch(err => console.error('Error updating assignment:', err));
+    });
+
+    document.getElementById('calculate-Needed').addEventListener('click', function () {
+      const category = document.getElementById('categoryName-Needed').value;
+      const maxPoints = document.getElementById('maxPoints-Needed').value;
+      const gradeWanted = document.getElementById('gradeWanted-Needed').value;
+      const responseheader = document.getElementById('output-Needed');
+
+      fetch('/categoryNeed', {
         method: 'POST',
-        headers: {
-            'Content-Type' : 'application/json'
-        },
-        body: JSON.stringify({
-            entry:tableToDicts(),
-            mock: [category, maxPoints, gradeWanted]
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry: tableToDicts(), mock: [category, maxPoints, gradeWanted] })
+      })
+        .then(r => r.json())
+        .then(data => {
+          responseheader.textContent = data['needed_score'];
         })
-    }).then(response => response.json())
-    .then(data => {
-        console.log("Server Update: ", data);
-        responseheader.textContent = data['needed_score'];
-    })
-    .catch(error => console.error("Error calculating neccesary grade: ", error))
-})
+        .catch(err => console.error('Error calculating necessary grade:', err));
+    });
 
-// Function to update the table with the new data
-function updateTable(data) {
-    const tbody = document.querySelector('table tbody');
-    tbody.innerHTML = '';  // Clear current table data
-
-    data.forEach(entry => {
+    // Helpers
+    function updateTable(data) {
+      const tbody = document.querySelector('table tbody');
+      tbody.innerHTML = '';
+      data.forEach(entry => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${entry.category}</td>
-            <td class="weight">${entry.weight}</td>
-            <td class="points-earned">${entry.score}</td>
-            <td class="max-points">${entry.total}</td>
-            <td class="percentage">${entry.percent}</td>
-            <td class="grade">${entry.grade}</td>
-        `;
+          <td class="px-4 py-2">${entry.category}</td>
+          <td class="px-4 py-2">${entry.weight}</td>
+          <td class="px-4 py-2">${entry.score}</td>
+          <td class="px-4 py-2">${entry.total}</td>
+          <td class="px-4 py-2">${entry.percent}</td>
+          <td class="px-4 py-2">${entry.grade}</td>`;
         tbody.appendChild(row);
-    });
-}
+      });
+    }
 
-function updateDropdown(data) {
-    const dropdown = document.getElementById("categoryName");
-    dropdown.innerHTML = '';  // Clear current dropdown options
-    data.forEach(entry => {
-        const option = document.createElement('option');
-        option.value = entry.category;
-        option.textContent = entry.category;
-        dropdown.appendChild(option);
-    });
-    const dropdown2 = document.getElementById("categoryName-Needed");
-    dropdown2.innerHTML = dropdown.innerHTML;
-}
+    function updateDropdown(data) {
+      const dropdowns = [document.getElementById('categoryName'), document.getElementById('categoryName-Needed')];
+      dropdowns.forEach(d => (d.innerHTML = ''));
+      data.forEach(entry => {
+        dropdowns.forEach(d => {
+          const option = document.createElement('option');
+          option.value = entry.category;
+          option.textContent = entry.category;
+          d.appendChild(option.cloneNode(true));
+        });
+      });
+    }
 
-function updateGrade(data) {
-    return fetch('/overallGrade', {
+    function updateGrade(data) {
+      return fetch('/overallGrade', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            info: data
-        })
-    }).then(response => response.json())
-    .then(out => {
-        const gradeText = document.getElementById("overallGradeTitle");
-        gradeText.textContent = "Total: " + out.percent + " (" + out.grade + ")";
-        return out;  // Return data to chain further processing
-    });
-}
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ info: data })
+      })
+        .then(r => r.json())
+        .then(out => {
+          document.getElementById('overallGradeTitle').textContent = `Total: ${out.percent} (${out.grade})`;
+          return out;
+        });
+    }
 
-function reCalculate(data) {
-    return fetch('/recalc', {
+    function reCalculate(data) {
+      return fetch('/recalc', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            info: data
-        })
-    }).then(response => response.json())
-    .then(data => {
-        console.log(data);
-        return data;  // Ensure data is returned for further processing
-    });
-}
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ info: data })
+      })
+        .then(r => r.json())
+        .then(d => d);
+    }
 
-function tableToDicts() {
-    const rows = document.querySelectorAll("table tbody tr");
-    const results = [];
-
-    rows.forEach(row => {
-        const cells = row.querySelectorAll("td");
+    function tableToDicts() {
+      const rows = document.querySelectorAll('table tbody tr');
+      const results = [];
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
         if (cells.length === 6) {
-            results.push({
-                category: cells[0].textContent.trim(),
-                weight: cells[1].textContent.trim(),
-                score: cells[2].textContent.trim(),
-                total: cells[3].textContent.trim(),
-                percent: cells[4].textContent.trim(),
-                grade: cells[5].textContent.trim()
-            });
+          results.push({
+            category: cells[0].textContent.trim(),
+            weight: cells[1].textContent.trim(),
+            score: cells[2].textContent.trim(),
+            total: cells[3].textContent.trim(),
+            percent: cells[4].textContent.trim(),
+            grade: cells[5].textContent.trim()
+          });
         }
-    });
-    console.log(results);
-    return results;
-}
+      });
+      return results;
+    }
+  </script>
 
-    </script>
 </body>
 </html>
