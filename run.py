@@ -128,5 +128,66 @@ def recalc():
 
     return jsonify(entries)
 
+@app.route('/categoryNeed', methods=['POST'])
+def needed():
+    data = request.get_json()
+    entries = data['entry']
+    mock = data['mock']  # [category, max_points, desired_overall_percent]
+
+    target_category = mock[0]
+    max_points = float(mock[1])
+    desired_overall = float(mock[2].replace('%', ''))
+
+    # Calculate total weight
+    total_weight = sum(float(entry['weight'][:-1]) for entry in entries)
+
+    # Track current weighted percent (excluding the category we're targeting)
+    weighted_current = 0
+    target_weight = 0
+    current_score = 0
+    current_total = 0
+
+    for entry in entries:
+        weight = float(entry['weight'][:-1])
+        score = float(entry['score'])
+        total = float(entry['total'])
+
+        if entry['category'] == target_category:
+            target_weight = weight
+            current_score = score
+            current_total = total
+        else:
+            weighted_current += (score / total) * weight
+
+    # Normalize weights (so the weights aren't assumed to sum to 100)
+    desired_weighted = (desired_overall / 100) * total_weight
+
+    # Let x = points needed on the new assignment
+    # Equation: (current_score + x) / (current_total + max_points) * target_weight + weighted_current = desired_weighted
+    # Solve for x:
+    denominator = current_total + max_points
+    numerator = desired_weighted - weighted_current
+    if target_weight == 0:
+        return jsonify({"error": "Target category has 0 weight"}), 400
+
+    required_score = ((numerator / target_weight) * denominator) - current_score
+
+    if required_score > max_points:
+        result = "Not possible"
+    elif required_score < 0:
+        result = 0
+    else:
+        result = round(required_score, 2)
+
+    return jsonify({
+        'needed_score': result,
+        'category': target_category,
+        'max_points': max_points,
+        'desired_overall_percent': f"{desired_overall}%",
+        'letter_equivalent': percent_to_letter(desired_overall)
+    })
+
+    
+
 if __name__ == '__main__':
     app.run(port=8000, debug=True)

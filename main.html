@@ -31,12 +31,22 @@
     <input type="text" id="entry" name="Distribution" placeholder="Type and press Enter"><br>
 
     <h3>New Assignment</h3>
-    <select name="selection" id="categoryName">
-        <option value="None">None</option>
-    </select>
-    <input type="number" id="pointsEarned" placeholder="Points Earned" /><br>
-    <input type="number" id="maxPoints" placeholder="Max Points" /><br>
-    <button id="submitAssignment" style="background-color: green; color: white;">Submit New Assignment</button>
+        <select name="selection" id="categoryName">
+            <option value="None">None</option>
+        </select>
+        <input type="number" id="pointsEarned" placeholder="Points Earned" /><br>
+        <input type="number" id="maxPoints" placeholder="Max Points" /><br>
+        <button id="submitAssignment" style="background-color: green; color: white;">Submit New Assignment</button>
+
+    <h3>Grade Needed</h3>
+        <select name="selection" id="categoryName-Needed">
+            <option value="None">None</option>
+        </select>
+        <input type="number" id="maxPoints-Needed" placeholder="Max Points" /><br>
+        <input type="text" id="gradeWanted-Needed" placeholder="90%" /><br>
+        <button id="calculate-Needed" style="background-color: green; color: white;">Calculate Minimum Grade</button>
+        <h4 id="output-Needed"></h4>
+    
 
     <h2>Results</h2>
     <table>
@@ -102,12 +112,33 @@ document.getElementById('submitAssignment').addEventListener('click', function()
         })
     }).then(response => response.json())
         .then(data => {
-            console.log("Server Update:", data);
+            console.log("Server Update: ", data);
             updateTable(data);
             updateGrade(data);
         })
         .catch(error => console.error("Error updating assignment:", error));
 });
+document.getElementById('calculate-Needed').addEventListener('click', function(){
+    const category = document.getElementById("categoryName-Needed").value;
+    const maxPoints = document.getElementById("maxPoints-Needed").value;
+    const gradeWanted = document.getElementById("gradeWanted-Needed").value;
+    const responseheader = document.getElementById("output-Needed");
+    fetch('/categoryNeed', {
+        method: 'POST',
+        headers: {
+            'Content-Type' : 'application/json'
+        },
+        body: JSON.stringify({
+            entry:tableToDicts(),
+            mock: [category, maxPoints, gradeWanted]
+        })
+    }).then(response => response.json())
+    .then(data => {
+        console.log("Server Update: ", data);
+        responseheader.textContent = data['needed_score'];
+    })
+    .catch(error => console.error("Error calculating neccesary grade: ", error))
+})
 
 // Function to update the table with the new data
 function updateTable(data) {
@@ -137,6 +168,8 @@ function updateDropdown(data) {
         option.textContent = entry.category;
         dropdown.appendChild(option);
     });
+    const dropdown2 = document.getElementById("categoryName-Needed");
+    dropdown2.innerHTML = dropdown.innerHTML;
 }
 
 function updateGrade(data) {
