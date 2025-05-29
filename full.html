@@ -112,67 +112,72 @@
 
   <!-- Original Script (kept intact) -->
   <script>
-    // Listen for Enter key press on the input field
-    document.getElementById('entry').addEventListener('keydown', function (event) {
-      if (event.key === 'Enter') {
-        const input = this.value;
-        fetch('/submit', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: 'entry=' + encodeURIComponent(input)
-        })
-          .then(response => response.json())
-          .then(data => {
-            updateGrade(data);
-            return reCalculate(data);
-          })
-          .then(updatedData => {
-            updateTable(updatedData);
-            updateDropdown(updatedData);
-          })
-          .catch(error => console.error('Error:', error));
+    const entries = [];
+  
+    function percentToLetter(percent) {
+      if (percent >= 98) return "A+";
+      if (percent >= 93) return "A";
+      if (percent >= 90) return "A-";
+      if (percent >= 87) return "B+";
+      if (percent >= 83) return "B";
+      if (percent >= 80) return "B-";
+      if (percent >= 77) return "C+";
+      if (percent >= 73) return "C";
+      if (percent >= 70) return "C-";
+      if (percent >= 63) return "D";
+      if (percent > 60) return "D-";
+      return "F";
+    }
+  
+    function parseInput(input) {
+      const clean = input.trim().replace(/\s+/g, ' ');
+      const pattern = /(.*?)\s+(\d+\.?\d*%)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*%)\s*([A-F][+-]?)/g;
+      let match;
+      const results = [];
+      while ((match = pattern.exec(clean)) !== null) {
+        const [_, category, weight, score, total, percent, grade] = match;
+        results.push({ category: category.trim(), weight, score, total, percent, grade });
       }
-    });
-
-    document.getElementById('submitAssignment').addEventListener('click', function () {
-      const category = document.getElementById('categoryName').value;
-      const points = document.getElementById('pointsEarned').value;
-      const max = document.getElementById('maxPoints').value;
-
-      fetch('/newData', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry: tableToDicts(), update: [category, points, max] })
-      })
-        .then(r => r.json())
-        .then(data => {
-          updateTable(data);
-          updateGrade(data);
-        })
-        .catch(err => console.error('Error updating assignment:', err));
-    });
-
-    document.getElementById('calculate-Needed').addEventListener('click', function () {
-      const category = document.getElementById('categoryName-Needed').value;
-      const maxPoints = document.getElementById('maxPoints-Needed').value;
-      const gradeWanted = document.getElementById('gradeWanted-Needed').value;
-      const responseheader = document.getElementById('output-Needed');
-
-      fetch('/categoryNeed', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry: tableToDicts(), mock: [category, maxPoints, gradeWanted] })
-      })
-        .then(r => r.json())
-        .then(data => {
-          responseheader.textContent = data['needed_score'];
-        })
-        .catch(err => console.error('Error calculating necessary grade:', err));
-    });
-
-    // Helpers
+      return results;
+    }
+  
+    function recalculate(data) {
+      for (const entry of data) {
+        const score = parseFloat(entry.score);
+        const total = parseFloat(entry.total);
+        if (score === 0 && total === 0) {
+          entry.percent = "-1";
+          entry.grade = "";
+        } else {
+          const perc = +(100 * (score / total)).toFixed(2);
+          entry.percent = `${perc}%`;
+          entry.grade = percentToLetter(perc);
+        }
+      }
+      return data;
+    }
+  
+    function updateGrade(data) {
+      let weightedTotal = 0, totalWeight = 0;
+      for (const entry of data) {
+        const weight = parseFloat(entry.weight.replace('%', ''));
+        const score = parseFloat(entry.score);
+        const total = parseFloat(entry.total);
+        if (total > 0) {
+          const percent = 100 * (score / total);
+          weightedTotal += percent * weight;
+          totalWeight += weight;
+        }
+      }
+      const finalPercent = +(weightedTotal / totalWeight).toFixed(2);
+      const finalGrade = percentToLetter(finalPercent);
+      document.getElementById('overallGradeTitle').textContent = `Total: ${finalPercent} (${finalGrade})`;
+    }
+  
+    function tableToDicts() {
+      return JSON.parse(JSON.stringify(entries)); // Return a deep copy
+    }
+  
     function updateTable(data) {
       const tbody = document.querySelector('table tbody');
       tbody.innerHTML = '';
@@ -188,62 +193,98 @@
         tbody.appendChild(row);
       });
     }
-
+  
     function updateDropdown(data) {
       const dropdowns = [document.getElementById('categoryName'), document.getElementById('categoryName-Needed')];
-      dropdowns.forEach(d => (d.innerHTML = ''));
+      dropdowns.forEach(d => d.innerHTML = '');
       data.forEach(entry => {
-        dropdowns.forEach(d => {
-          const option = document.createElement('option');
-          option.value = entry.category;
-          option.textContent = entry.category;
-          d.appendChild(option.cloneNode(true));
-        });
+        const option = document.createElement('option');
+        option.value = entry.category;
+        option.textContent = entry.category;
+        dropdowns.forEach(d => d.appendChild(option.cloneNode(true)));
       });
     }
-
-    function updateGrade(data) {
-      return fetch('/overallGrade', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ info: data })
-      })
-        .then(r => r.json())
-        .then(out => {
-          document.getElementById('overallGradeTitle').textContent = `Total: ${out.percent} (${out.grade})`;
-          return out;
-        });
-    }
-
-    function reCalculate(data) {
-      return fetch('/recalc', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ info: data })
-      })
-        .then(r => r.json())
-        .then(d => d);
-    }
-
-    function tableToDicts() {
-      const rows = document.querySelectorAll('table tbody tr');
-      const results = [];
-      rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length === 6) {
-          results.push({
-            category: cells[0].textContent.trim(),
-            weight: cells[1].textContent.trim(),
-            score: cells[2].textContent.trim(),
-            total: cells[3].textContent.trim(),
-            percent: cells[4].textContent.trim(),
-            grade: cells[5].textContent.trim()
-          });
+  
+    function updateAssignment(category, score, total) {
+      for (const entry of entries) {
+        if (entry.category === category) {
+          entry.score = parseFloat(entry.score) + parseFloat(score);
+          entry.total = parseFloat(entry.total) + parseFloat(total);
         }
-      });
-      return results;
+      }
+      recalculate(entries);
+      updateTable(entries);
+      updateGrade(entries);
     }
+  
+    function calculateNeeded(category, maxPoints, desiredPercent) {
+      maxPoints = parseFloat(maxPoints);
+      desiredPercent = parseFloat(desiredPercent.replace('%', ''));
+      let weightedCurrent = 0;
+      let totalWeight = 0;
+      let targetWeight = 0;
+      let currentScore = 0;
+      let currentTotal = 0;
+  
+      for (const entry of entries) {
+        const weight = parseFloat(entry.weight.replace('%', ''));
+        const score = parseFloat(entry.score);
+        const total = parseFloat(entry.total);
+        totalWeight += weight;
+  
+        if (entry.category === category) {
+          targetWeight = weight;
+          currentScore = score;
+          currentTotal = total;
+        } else {
+          weightedCurrent += (score / total) * weight;
+        }
+      }
+  
+      const desiredWeighted = (desiredPercent / 100) * totalWeight;
+      const denominator = currentTotal + maxPoints;
+      const numerator = desiredWeighted - weightedCurrent;
+      if (targetWeight === 0) return "Category weight is zero";
+  
+      const requiredScore = ((numerator / targetWeight) * denominator) - currentScore;
+      if (requiredScore > maxPoints) return "Not possible";
+      if (requiredScore < 0) return 0;
+      return requiredScore.toFixed(2);
+    }
+  
+    // Event Listeners
+    document.getElementById('entry').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        const input = this.value;
+        const parsed = parseInput(input);
+        entries.length = 0;
+        entries.push(...parsed);
+        recalculate(entries);
+        updateTable(entries);
+        updateDropdown(entries);
+        updateGrade(entries);
+      }
+    });
+  
+    document.getElementById('submitAssignment').addEventListener('click', function () {
+      const category = document.getElementById('categoryName').value;
+      const points = document.getElementById('pointsEarned').value;
+      const max = document.getElementById('maxPoints').value;
+      updateAssignment(category, points, max);
+    });
+  
+    document.getElementById('calculate-Needed').addEventListener('click', function () {
+      const category = document.getElementById('categoryName-Needed').value;
+      const maxPoints = document.getElementById('maxPoints-Needed').value;
+      const gradeWanted = document.getElementById('gradeWanted-Needed').value;
+      const output = document.getElementById('output-Needed');
+      const result = calculateNeeded(category, maxPoints, gradeWanted);
+      output.textContent = result;
+    });
   </script>
+  
+  
+
 
 </body>
 </html>
